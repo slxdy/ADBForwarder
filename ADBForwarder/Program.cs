@@ -5,30 +5,34 @@ using System.Net;
 using System.Threading;
 using System.Reflection;
 using System.Diagnostics;
+using System.Net.Http;
 using System.Runtime.InteropServices;
-
 using SharpAdbClient;
 using ICSharpCode.SharpZipLib.Zip;
 
 namespace ADBForwarder
 {
-    internal class Program
+    internal static class Program
     {
-        public const string VERSION = "0.2";
-        
-        private static readonly string[] deviceNames =
+        private static readonly string[] DeviceNames =
         {
-            "monterey",        // Oculus Quest 1
-            "hollywood",       // Oculus Quest 2
-            "pacific",         // Oculus Go
-            "vr_monterey",     // Edge case for linux, Quest 1
-            "vr_hollywood",    // Edge case for linux, Oculus Quest 2
-            "vr_pacific"       // Edge case for linux, Oculus Go
+            "monterey", // Oculus Quest 1
+            "hollywood", // Oculus Quest 2
+            "eureka", // Oculus Quest 3
+            "pacific", // Oculus Go
+            "a7h10", // Pico neo 3 (+link)
+            "phoenix_ovs", // Pico 4
+            "vr_monterey", // Edge case for linux, Quest 1
+            "vr_hollywood", // Edge case for linux, Oculus Quest 2
+            "vr_eureka", // Edge case for linux, Oculus Quest 3
+            "vr_pacific", // Edge case for linux, Oculus Go
+            "vr_a7h10", // Edge case for linux, Pico neo 3 (+link)
+            "vr_phoenix_ovs" // Edge case for linux, Pico 4
         };
-        
-        private static readonly AdbClient client = new AdbClient();
-        private static readonly AdbServer server = new AdbServer();
-        private static readonly IPEndPoint endPoint = new IPEndPoint(IPAddress.Loopback, AdbClient.AdbServerPort);
+
+        private static readonly AdbClient Client = new();
+        private static readonly AdbServer Server = new();
+        private static readonly IPEndPoint EndPoint = new(IPAddress.Loopback, AdbClient.AdbServerPort);
 
         private static void Main()
         {
@@ -40,21 +44,21 @@ namespace ADBForwarder
                 Console.WriteLine("Path error!");
                 return;
             }
-            
+
             var adbPath = "adb/platform-tools/{0}";
             var downloadUri = "https://dl.google.com/android/repository/platform-tools-latest-{0}.zip";
-            
+
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
             {
                 Console.WriteLine("Platform: Linux");
-                
+
                 adbPath = string.Format(adbPath, "adb");
                 downloadUri = string.Format(downloadUri, "linux");
             }
             else if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
                 Console.WriteLine("Platform: Windows");
-                
+
                 adbPath = string.Format(adbPath, "adb.exe");
                 downloadUri = string.Format(downloadUri, "windows");
             }
@@ -69,17 +73,17 @@ namespace ADBForwarder
             {
                 Console.WriteLine("ADB not found, downloading in the background...");
                 DownloadADB(downloadUri);
-                
+
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
                     SetExecutable(absoluteAdbPath);
             }
 
             Console.WriteLine("Starting ADB Server...");
-            server.StartServer(absoluteAdbPath, false);
+            Server.StartServer(absoluteAdbPath, false);
 
-            client.Connect(endPoint);
-            
-            var monitor = new DeviceMonitor(new AdbSocket(endPoint));
+            Client.Connect(EndPoint);
+
+            var monitor = new DeviceMonitor(new AdbSocket(EndPoint));
             monitor.DeviceConnected += Monitor_DeviceConnected;
             monitor.DeviceDisconnected += Monitor_DeviceDisconnected;
             monitor.Start();
@@ -103,41 +107,42 @@ namespace ADBForwarder
             Console.ForegroundColor = ConsoleColor.DarkRed;
             Console.WriteLine($"Disconnected device: {e.Device.Serial}");
         }
-        
+
         private static void Forward(DeviceData device)
         {
             // DeviceConnected calls without product set yet
             Thread.Sleep(1000);
 
-            foreach (var deviceData in client.GetDevices().Where(deviceData => device.Serial == deviceData.Serial))
+            foreach (var deviceData in Client.GetDevices().Where(deviceData => device.Serial == deviceData.Serial))
             {
-                if (!deviceNames.Contains(deviceData.Product))
+                if (!DeviceNames.Contains(deviceData.Product.ToLower()))
                 {
                     Console.ForegroundColor = ConsoleColor.Yellow;
-                    Console.WriteLine($"Skipped forwarding device: {(string.IsNullOrEmpty(deviceData.Product) ? deviceData.Serial : deviceData.Product)}");
+                    Console.WriteLine(
+                        $"Skipped forwarding device: {(string.IsNullOrEmpty(deviceData.Product) ? deviceData.Serial : deviceData.Product)}");
                     return;
                 }
 
-                client.CreateForward(deviceData, 9943, 9943);
-                client.CreateForward(deviceData, 9944, 9944);
+                Client.CreateForward(deviceData, 9943, 9943);
+                Client.CreateForward(deviceData, 9944, 9944);
 
                 Console.ForegroundColor = ConsoleColor.Green;
                 Console.WriteLine($"Successfully forwarded device: {deviceData.Serial} [{deviceData.Product}]");
-                    
+
                 return;
             }
         }
-        
+
         private static void DownloadADB(string downloadUri)
         {
             using var web = new WebClient();
             web.DownloadFile(downloadUri, "adb.zip");
             Console.WriteLine("Download successful");
-            
+
             var zip = new FastZip();
             zip.ExtractZip("adb.zip", "adb", null);
             Console.WriteLine("Extraction successful");
-            
+
             File.Delete("adb.zip");
         }
 
@@ -147,18 +152,16 @@ namespace ADBForwarder
 
             var args = $"chmod u+x {fileName}";
             var escapedArgs = args.Replace("\"", "\\\"");
-        
-            using var process = new Process
+
+            using var process = new Process();
+            process.StartInfo = new ProcessStartInfo
             {
-                StartInfo = new ProcessStartInfo
-                {
-                    RedirectStandardOutput = true,
-                    UseShellExecute = false,
-                    CreateNoWindow = true,
-                    WindowStyle = ProcessWindowStyle.Hidden,
-                    FileName = "/bin/bash",
-                    Arguments = $"-c \"{escapedArgs}\""
-                }
+                RedirectStandardOutput = true,
+                UseShellExecute = false,
+                CreateNoWindow = true,
+                WindowStyle = ProcessWindowStyle.Hidden,
+                FileName = "/bin/bash",
+                Arguments = $"-c \"{escapedArgs}\""
             };
 
             process.Start();
