@@ -1,0 +1,42 @@
+# This workflow will build a .NET project
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-net
+
+name: .NET
+
+on:
+  push:
+    tags:
+      - '*'
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: 8.0.x
+      - name: Publish for linux
+        run: dotnet publish -r linux-x64 -c Release
+      - name: Publish for windows
+        run: dotnet build -r win-x64 -c Release
+      - name: Upload linux binaries to release
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: ADBForwarder/bin/Release/net8.0/linux-x64/publish
+          asset_name: ADBForwarder-linux-x64.zip
+          tag: ${{ github.ref }}
+          overwrite: true
+          body: ""
+      - name: Upload windows binaries to release
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: ADBForwarder/bin/Release/net8.0/win-x64/publish
+          asset_name: ADBForwarder-linux-x64.zip
+          tag: ${{ github.ref }}
+          overwrite: true
+          body: ""
