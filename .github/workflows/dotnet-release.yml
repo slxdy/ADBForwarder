@@ -23,7 +23,7 @@ jobs:
       - name: Publish for windows
         run: dotnet publish -r win-x64 -c Release
       - name: Pack linux build
-        run: zip -r ADBForwarder-windows-x64.zip ADBForwarder/bin/Release/net8.0/linux-x64/
+        run: zip -r ADBForwarder-linux-x64.zip ADBForwarder/bin/Release/net8.0/linux-x64/
       - name: Pack windows build
         run: zip -r ADBForwarder-windows-x64.zip ADBForwarder/bin/Release/net8.0/win-x64/
       - name: Release
