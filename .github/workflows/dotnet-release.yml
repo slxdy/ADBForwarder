@@ -28,12 +28,12 @@ jobs:
         uses: actions/upload-artifact@v4.0.0
         with:
           name: ADBForwarder-linux-x64.zip
-          path: ADBForwarder/bin/Debug/net8.0/linux-x64/publish
+          path: ADBForwarder/bin/Release/net8.0/linux-x64/publish
       - name: Upload Windows Artifact
         uses: actions/upload-artifact@v4.0.0
         with:
           name: ADBForwarder-windows-x64.zip
-          path: ADBForwarder/bin/Debug/net8.0/win-x64/publish
+          path: ADBForwarder/bin/Release/net8.0/win-x64/publish
       - uses: ncipollo/release-action@v1
         with:
           draft: true
