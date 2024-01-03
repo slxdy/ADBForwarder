@@ -38,5 +38,5 @@ jobs:
         with:
           draft: true
           files: |
-            ADBForwarder-linux-x64.zip
-            ADBForwarder-windows-x64.zip
+            ADBForwarder/bin/Release/net8.0/linux-x64/ADBForwarder-linux-x64.zip
+            ADBForwarder/bin/Release/net8.0/win-x64/ADBForwarder-windows-x64.zip
