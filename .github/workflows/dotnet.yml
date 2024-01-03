@@ -8,6 +8,9 @@ on:
     branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
+  release:
+    types:
+      - created
 
 jobs:
   build:
@@ -15,23 +18,22 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v3
-      with:
-        dotnet-version: 8.0.x
-    - name: Publish for linux
-      run: dotnet publish -r linux-x64
-    - name: Publish for windows
-      run: dotnet publish -r win-x64
-    - name: Upload Linux Artifact
-      uses: actions/upload-artifact@v4.0.0
-      with:
-        name: ADBForwarder-linux-x64.zip
-        path: ADBForwarder/bin/Release/net8.0/linux-x64/publish/*
-    - name: Upload Windows Artifact
-      uses: actions/upload-artifact@v4.0.0
-      with:
-        name: ADBForwarder-windows-x64.zip
-        path: ADBForwarder/bin/Release/net8.0/win-x64/publish/*
-          
+      - uses: actions/checkout@v3
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: 8.0.x
+      - name: Publish for linux
+        run: dotnet publish -r linux-x64
+      - name: Publish for windows
+        run: dotnet publish -r win-x64
+      - name: Upload Linux Artifact
+        uses: actions/upload-artifact@v4.0.0
+        with:
+          name: ADBForwarder-linux-x64.zip
+          path: ADBForwarder/bin/Release/net8.0/linux-x64/publish/*
+      - name: Upload Windows Artifact
+        uses: actions/upload-artifact@v4.0.0
+        with:
+          name: ADBForwarder-windows-x64.zip
+          path: ADBForwarder/bin/Release/net8.0/win-x64/publish/*
