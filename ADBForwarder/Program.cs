@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -9,17 +10,32 @@ using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using SharpAdbClient;
 using ICSharpCode.SharpZipLib.Zip;
+using Microsoft.Extensions.Configuration;
 
 namespace ADBForwarder
 {
+    internal class PortConfiguration(List<int> ports)
+    {
+        public List<int> Ports { get; init; } = ports;
+    }
+
     internal static class Program
     {
         private static readonly AdbClient Client = new();
         private static readonly AdbServer Server = new();
         private static readonly IPEndPoint EndPoint = new(IPAddress.Loopback, AdbClient.AdbServerPort);
+        private static PortConfiguration _portConfiguration;
 
         private static void Main()
         {
+            var builder = new ConfigurationBuilder()
+                .SetBasePath(Directory.GetCurrentDirectory())
+                .AddJsonFile("config.json", optional: false);
+
+            IConfiguration config = builder.Build();
+
+            _portConfiguration = config.GetSection("PortConfiguration").Get<PortConfiguration>();
+            
             Console.ResetColor();
             var currentDirectory = Path.GetDirectoryName(AppContext.BaseDirectory);
             if (currentDirectory == null)
@@ -113,8 +129,10 @@ namespace ADBForwarder
                     return;
                 }
 
-                Client.CreateForward(deviceData, 9943, 9943);
-                Client.CreateForward(deviceData, 9944, 9944);
+                foreach (var port in _portConfiguration.Ports)
+                {
+                    Client.CreateForward(deviceData, port, port);
+                }
 
                 Console.ForegroundColor = ConsoleColor.Green;
                 Console.WriteLine($"Successfully forwarded device: {deviceData.Serial} [{deviceData.Product}]");
