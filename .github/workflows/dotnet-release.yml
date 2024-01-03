@@ -11,7 +11,9 @@ jobs:
   build:
 
     runs-on: ubuntu-latest
-
+    permissions:
+      contents: write
+    
     steps:
       - uses: actions/checkout@v3
       - name: Setup .NET
@@ -22,21 +24,17 @@ jobs:
         run: dotnet publish -r linux-x64 -c Release
       - name: Publish for windows
         run: dotnet publish -r win-x64 -c Release
-      - name: Upload linux binaries to release
-        uses: svenstaro/upload-release-action@v2
+      - name: Upload Linux Artifact
+        uses: actions/upload-artifact@v4.0.0
         with:
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: ADBForwarder/bin/Release/net8.0/linux-x64/publish
-          asset_name: ADBForwarder-linux-x64.zip
-          tag: ${{ github.ref }}
-          overwrite: true
-          body: ""
-      - name: Upload windows binaries to release
-        uses: svenstaro/upload-release-action@v2
+          name: ADBForwarder-linux-x64.zip
+          path: ADBForwarder/bin/Debug/net8.0/linux-x64/publish
+      - name: Upload Windows Artifact
+        uses: actions/upload-artifact@v4.0.0
         with:
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: ADBForwarder/bin/Release/net8.0/win-x64/publish
-          asset_name: ADBForwarder-linux-x64.zip
-          tag: ${{ github.ref }}
-          overwrite: true
-          body: ""
+          name: ADBForwarder-windows-x64.zip
+          path: ADBForwarder/bin/Debug/net8.0/win-x64/publish
+      - uses: ncipollo/release-action@v1
+        with:
+          draft: true
+          artifacts: "ADBForwarder-linux-x64.zip,ADBForwarder-windows-x64.zip"
