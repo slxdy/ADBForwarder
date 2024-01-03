@@ -16,7 +16,7 @@ namespace ADBForwarder
 {
     internal class PortConfiguration(List<int> ports)
     {
-        public List<int> Ports { get; init; } = ports;
+        public List<int> Ports { get; set; } = ports;
     }
 
     internal static class Program
@@ -30,12 +30,13 @@ namespace ADBForwarder
         {
             var builder = new ConfigurationBuilder()
                 .SetBasePath(Directory.GetCurrentDirectory())
-                .AddJsonFile("config.json", optional: false);
+                .AddJsonFile("config.json", optional: true);
 
             IConfiguration config = builder.Build();
 
-            _portConfiguration = config.GetSection("PortConfiguration").Get<PortConfiguration>();
-            
+            _portConfiguration = config.GetSection("PortConfiguration").Get<PortConfiguration>()
+                                 ?? new PortConfiguration([9943, 9944]);
+
             Console.ResetColor();
             var currentDirectory = Path.GetDirectoryName(AppContext.BaseDirectory);
             if (currentDirectory == null)
@@ -97,6 +98,8 @@ namespace ADBForwarder
 
         private static void Monitor_DeviceConnected(object sender, DeviceDataEventArgs e)
         {
+            // Prevent duplicate ports
+            _portConfiguration.Ports = _portConfiguration.Ports.Distinct().ToList();
             if (e.Device.Serial.StartsWith("127.0.0.1"))
             {
                 // We don't want to re-forward local device
