@@ -23,9 +23,15 @@ jobs:
       - name: Publish for windows
         run: dotnet publish -r win-x64 -c Release
       - name: Pack linux build
-        run: zip -r ADBForwarder-linux-x64.zip ADBForwarder/bin/Release/net8.0/linux-x64/
+        run: cd ADBForwarder/bin/Release/net8.0/linux-x64/ &&
+          mv publish adbforwarder &&
+          zip -r ADBForwarder-linux-x64.zip adbforwarder &&
+          cd -
       - name: Pack windows build
-        run: zip -r ADBForwarder-windows-x64.zip ADBForwarder/bin/Release/net8.0/win-x64/
+        run: cd ADBForwarder/bin/Release/net8.0/win-x64/ &&
+          mv publish adbforwarder &&
+          zip -r ADBForwarder-windows-x64.zip adbforwarder &&
+          cd - &&
       - name: Release
         uses: softprops/action-gh-release@v1
         if: startsWith(github.ref, 'refs/tags/')
