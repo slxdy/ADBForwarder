@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using SharpAdbClient;
 using ICSharpCode.SharpZipLib.Zip;
 using Microsoft.Extensions.Configuration;
+using UnixFileMode = System.IO.UnixFileMode;
 
 namespace ADBForwarder
 {
@@ -76,7 +77,11 @@ namespace ADBForwarder
                 DownloadADB(downloadUri).Wait();
 
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-                    SetExecutable(absoluteAdbPath);
+                {
+                    Console.WriteLine("Giving adb executable permissions");
+                    File.SetUnixFileMode(absoluteAdbPath,
+                        UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
+                }
             }
 
             Console.WriteLine("Starting ADB Server...");
@@ -160,28 +165,6 @@ namespace ADBForwarder
             Console.WriteLine("Extraction successful");
 
             File.Delete("adb.zip");
-        }
-
-        private static void SetExecutable(string fileName)
-        {
-            Console.WriteLine("Giving adb executable permissions");
-
-            var args = $"chmod u+x {fileName}";
-            var escapedArgs = args.Replace("\"", "\\\"");
-
-            using var process = new Process();
-            process.StartInfo = new ProcessStartInfo
-            {
-                RedirectStandardOutput = true,
-                UseShellExecute = false,
-                CreateNoWindow = true,
-                WindowStyle = ProcessWindowStyle.Hidden,
-                FileName = "/bin/bash",
-                Arguments = $"-c \"{escapedArgs}\""
-            };
-
-            process.Start();
-            process.WaitForExit();
         }
     }
 }
