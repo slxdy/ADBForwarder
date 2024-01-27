@@ -134,6 +134,9 @@ namespace ADBForwarder
                     Console.ForegroundColor = ConsoleColor.Yellow;
                     Console.WriteLine(
                         $"Skipped forwarding device: {(string.IsNullOrEmpty(deviceData.Product) ? deviceData.Serial : deviceData.Product)}");
+                    if (!RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) return;
+                    Console.WriteLine("Please make sure you have android-udev-rules installed.");
+                    Console.WriteLine("Install them through package manager or visit https://github.com/M0Rf30/android-udev-rules and follow instructions.");
                     return;
                 }
 
